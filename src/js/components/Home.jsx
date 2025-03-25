@@ -33,7 +33,7 @@ const Home = () => {
 			<div className="card bg-body-secondary">
 				<h1 className="text-center mt-5">Mis tareas</h1>
 				<div className="d-flex m-3">
-					<input className="form-control" type="text" value={inputValue} onChange={cambiarTarea} />
+					<input className="form-control" type="text" value={inputValue} placeholder="escribe aqui tu tarea" onChange={cambiarTarea} />
 					<button className="btn btn-success" onClick={agregarTarea}>Agregar</button>
 				</div>
 
