@@ -1,69 +1,132 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 
 
 
 //create your first component
 const Home = () => {
-	const [inputValue, setInputValue] = useState("")
-	const [tareas, setTareas] = useState([])
-	const [hoverIndex, setHoverIndex] = useState(null);
+	const [tasks, setTasks] = useState([]);
+	const [newTask, setNewTask] = useState("");
 
 
 
-	const cambiarTarea = (e) => {
-		setInputValue(e.target.value)
+	useEffect(() => {
+		loadTasks()
+	}, [])
+
+
+	function loadTasks() {
+		fetch("https://playground.4geeks.com/todo/users/fede_ferreyra")
+			.then(response => {
+				if (!response.ok) {
+					console.error(response.statusText, response.status)
+					return
+				}
+				return response.json()
+			}).then(dataJson => {
+				setTasks(dataJson.todos)
+			})
+
 	}
 
-	const agregarTarea = () => {
-		setTareas([...tareas, inputValue])
-		setInputValue("") //esto esoara limpiar el input
 
+	function createUserAndAddTask(task) {
+		fetch("https://playground.4geeks.com/todo/users/fede_ferreyra", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify([])
+		})
+			.then(response => {
+				if (response.ok) {
+					addTask(task);
+				}
+			});
 	}
-	const deleteTarea = (index) => {
-		const tareaCreada = tareas.filter((tareas, i)=> i !== index)
-		setTareas(tareaCreada)
+
+	function addTask() {
+		if (newTask.trim() === "") return;
+
+		const task = { label: newTask, done: false };
+
+		fetch("https://playground.4geeks.com/todo/todos/fede_ferreyra", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(task)
+		})
+
+			.then(response => {
+				if (response.ok) {
+					loadTasks(); // Recargar la lista de tareas después de agregar
+					setNewTask(""); // Limpiar el input
+				} else {
+					createUserAndAddTask(task.label);
+				}
+			});
+	}
+
+	function deleteTask(taskId) {
+		fetch(`https://playground.4geeks.com/todo/todos/${taskId}`, {
+			method: "DELETE",
+			headers: {
+				"Content-Type": "application/json"
+			}
+		})
+			.then(response => {
+				if (response.ok) {
+					loadTasks(); // Recargar la lista después de eliminar
+				}
+			});
+	}
+
+	function deleteAllTasks() {
+		fetch("https://playground.4geeks.com/todo/users/fede_ferreyra", {
+			method: "DELETE",
+			headers: {
+				"Content-Type": "application/json"
+			}
+		})
+			.then(response => {
+				if (response.ok) {
+					setTasks([]); // Vaciar la lista en la interfaz
+				}
+			});
 	}
 
 
-	
 
 	return (
-		<div className="d-flex justify-content-center mt-5" style={{ height: "400px" }}>
-			<div className="card bg-body-secondary">
-				<h1 className="text-center mt-5">Mis tareas</h1>
-				<div className="d-flex m-3">
-					<input className="form-control" type="text" value={inputValue} placeholder="escribe aqui tu tarea" onChange={cambiarTarea} />
-					<button className="btn btn-success" onClick={agregarTarea}>Agregar</button>
+		<div className="d-flex justify-content-center align-items-center mt-5">
+			<div className="col-md-6 col-lg-4 text-center">
+				<div className="mb-3">
+					<input
+						type="text"
+						className="form-control"
+						placeholder="Agregar nueva tarea"
+						value={newTask}
+						onChange={(e) => setNewTask(e.target.value)}
+					/>
+					<button className="btn btn-primary mt-2" onClick={addTask}>Agregar</button>
 				</div>
+				{/* Aqui ira la lista q se renderizara o no */}
+				{tasks.length === 0 ? (
+					<p>No hay tareas</p>
+				) : (
+					<ul className="list-group">
+						{tasks.map(task => <li className="list-group-item d-flex justify-content-between align-items-center">
+							{task.label}<button className="btn btn-danger" onClick={() => deleteTask(task.id)} >Eliminar</button>
+						</li>)}
+					</ul>)}
 
-				<ul className="list-group list-group-flush">
-					{
-						tareas.length > 0 ? tareas.map(
-							(tarea, index) => {
-								return (
-									<li 
-									key={index} 
-									className="list-group-item mx-3 m-1 d-flex justify-content-between" 
-									onMouseEnter={() => setHoverIndex(index)}
-                                	onMouseLeave={() => setHoverIndex(null)}
-									>
-										{tarea}{hoverIndex === index && (
-										<button 
-										className=" bg-danger" 
-										onClick={()=> {deleteTarea(index)}}
-										>
-											<i className="fa-solid fa-trash-can"></i>
-										</button>)}
-									</li>
-								)
-							})
-							: <p className="list-group-item mx-3 m-1">No hay tareas</p>
-					}
-				</ul>
+
+				{tasks.length > 0 && (<button className="btn btn-danger mt-2 ms-2" onClick={deleteAllTasks}>Eliminar Todas</button>)}
 			</div>
 		</div>
-	);
-};
+	)
+}
 
 export default Home;
